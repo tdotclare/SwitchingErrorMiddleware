@@ -70,27 +70,28 @@ public final class SwitchingErrorMiddleware: Middleware {
 			// Options are html (using view template) or json
 			// create a Response with appropriate status
             let response = Response(status: status, headers: headers)
-			let responseType = req.storage.get(ResponseTypeHint.self) ?? returnType
+			let responseType = req.storage[ResponseTypeHint.self] ?? returnType
+            
 			
 			do {
 				switch responseType {
-				case .html:
-						let errorResponse = ["code": String(status.code), "reason": reason]
-						_ = req.view.renderAsString(template, ["error" : errorResponse]).map { body in
-							response.body = .init(string: body)
-							response.headers.replaceOrAdd(name: .contentType, value: "text/html; charset=utf-8")
-						}
-				case .json:
-						let errorResponse = ErrorResponse(error: true, reason: reason)
-						response.body = try .init(data: JSONEncoder().encode(errorResponse))
-						response.headers.replaceOrAdd(name: .contentType, value: "application/json; charset=utf-8")
+                    case .html:
+                            let errorResponse = ["code": String(status.code), "reason": reason]
+                            _ = req.view.renderAsString(template, ["error" : errorResponse]).map { body in
+                                response.body = .init(string: body)
+                                response.headers.replaceOrAdd(name: .contentType, value: responseType.description)
+                            }
+                    case .json:
+                            let errorResponse = ErrorResponse(error: true, reason: reason)
+                            response.body = try .init(data: JSONEncoder().encode(errorResponse))
+                            response.headers.replaceOrAdd(name: .contentType, value: responseType.description)
 					default:
 						throw "Invalid response type specified"
 				}
 			}
 			catch {
 				response.body = .init(string: "Oops: \(error)")
-				response.headers.replaceOrAdd(name: .contentType, value: "text/plain; charset=utf-8")
+                response.headers.replaceOrAdd(name: .contentType, value: HTTPMediaType.plainText.description)
 			}
 			           
             return response
