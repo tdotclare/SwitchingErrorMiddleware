@@ -1,0 +1,24 @@
+//
+//  View+String.swift
+//  App
+//
+//  Created by Teague Clare on 12/18/19.
+//
+
+// adds renderAsString method to ViewRenderer protocol in order to facilitate intermediate handling of views for tiered composition
+
+import Vapor
+
+extension ViewRenderer {
+	func renderAsString<E>(_ template: String, _ context: E) -> EventLoopFuture<String> where E: Encodable {
+		self.render(template,context).map { renderedView -> String in
+			renderedView.data.getString(at: 0,length: renderedView.data.readableBytes) ?? ""
+		}
+	}
+	
+	func renderAsString(_ template: String) -> EventLoopFuture<String> {
+		self.render(template).map { renderedView -> String in
+			renderedView.data.getString(at: 0,length: renderedView.data.readableBytes) ?? ""
+		}
+	}
+}
